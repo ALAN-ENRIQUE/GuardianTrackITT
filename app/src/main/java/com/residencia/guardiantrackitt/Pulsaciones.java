@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 public class Pulsaciones extends AppCompatActivity {
 
+    private TextView textData;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
     private BluetoothDevice bluetoothDevice;
@@ -33,7 +35,7 @@ public class Pulsaciones extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pulsaciones);
-
+        textData = findViewById(R.id.textData);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null) {
             // El dispositivo no es compatible con Bluetooth
@@ -46,7 +48,7 @@ public class Pulsaciones extends AppCompatActivity {
         }
 
         // Obtén el dispositivo Bluetooth al que deseas conectarte (puedes buscarlo o usar una dirección específica)
-        bluetoothDevice = bluetoothAdapter.getRemoteDevice("dirección del dispositivo");
+        bluetoothDevice = bluetoothAdapter.getRemoteDevice("98d3:51:fdefba");
 
         // Inicia una nueva conexión Bluetooth en un hilo separado
         new ConnectThread().start();
@@ -111,6 +113,7 @@ public class Pulsaciones extends AppCompatActivity {
                 // Actualiza tu interfaz de usuario con los datos recibidos
                 // Por ejemplo, muestra los datos en un TextView
                 // textView.setText(receivedData);
+                textData.setText(receivedData);
                 return true;
             } else if (msg.what == CONNECTING_STATUS) {
                 // Aquí puedes manejar el estado de conexión (conectado o desconectado)
