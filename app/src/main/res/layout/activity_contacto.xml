@@ -6,4 +6,44 @@
     android:layout_height="match_parent"
     tools:context=".Contacto">
 
+    <EditText
+        android:id="@+id/editTextNombre"
+        android:layout_width="163dp"
+        android:layout_height="43dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:hint="Nombre"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/editTextNumero"
+        android:layout_width="134dp"
+        android:layout_height="43dp"
+        android:layout_marginStart="52dp"
+        android:layout_marginTop="16dp"
+        android:hint="Número"
+        app:layout_constraintStart_toEndOf="@id/editTextNombre"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/buttonAgregar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Agregar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editTextNumero" />
+
+    <ListView
+        android:id="@+id/listViewContactos"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttonAgregar" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

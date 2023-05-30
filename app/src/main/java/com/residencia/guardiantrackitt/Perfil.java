@@ -42,27 +42,31 @@ public class Perfil extends AppCompatActivity {
     }
 
     private void cargarDatosUsuario() {
-        // Obtener la referencia al documento del usuario actual
-        DocumentReference userRef = db.collection("users").document(currentUser.getUid());
+        if (currentUser != null) {
+            // Obtener la referencia al documento del usuario actual en Firestore
+            DocumentReference userRef = db.collection("users").document(currentUser.getUid());
 
-        userRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-            @Override
-            public void onSuccess(DocumentSnapshot documentSnapshot) {
-                // Obtener los datos del documento y mostrarlos en los TextView correspondientes
-                String nombre = documentSnapshot.getString("nombre");
-                String correo = documentSnapshot.getString("correo");
-                String celular = documentSnapshot.getString("celular");
+            userRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                @Override
+                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                    // Obtener los datos del documento y mostrarlos en los TextView correspondientes
+                    String nombre = documentSnapshot.getString("name");
+                    String correo = currentUser.getEmail();
+                    String celular = currentUser.getPhoneNumber();
 
-                textViewNombre.setText(nombre);
-                textViewCorreo.setText(correo);
-                textViewCelular.setText(celular);
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                // Manejar el error
-                Toast.makeText(Perfil.this, "Error al cargar los datos del usuario.", Toast.LENGTH_SHORT).show();
-            }
-        });
+                    textViewNombre.setText("Nombre: " + nombre);
+                    textViewCorreo.setText("Correo: " + correo);
+                    textViewCelular.setText("Celular: " + celular);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    // Manejar el error
+                    Toast.makeText(Perfil.this, "Error al cargar los datos del usuario.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            Toast.makeText(this, "No se ha iniciado sesión", Toast.LENGTH_SHORT).show();
+        }
     }
 }

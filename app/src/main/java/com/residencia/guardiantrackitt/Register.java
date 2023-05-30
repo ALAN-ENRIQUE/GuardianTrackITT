@@ -24,7 +24,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-
 public class Register extends AppCompatActivity {
 
     private EditText nameEditText;
@@ -144,4 +143,5 @@ public class Register extends AppCompatActivity {
                     }
                 });
     }
+
 }

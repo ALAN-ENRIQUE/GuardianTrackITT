@@ -16,6 +16,8 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import android.net.Uri;
+
 
 public class Home_Familiar extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -48,7 +50,7 @@ public class Home_Familiar extends AppCompatActivity implements NavigationView.O
         buttonUbicacion.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Home_Familiar.this, Ubicacion.class);
+                Intent intent = new Intent(Home_Familiar.this, Pulsaciones.class);
                 startActivity(intent);
             }
         });
@@ -64,6 +66,11 @@ public class Home_Familiar extends AppCompatActivity implements NavigationView.O
         buttonPaginaWeb.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                String url = "https://alzheimertijuana.netlify.app/";
+
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(url));
+                startActivity(intent);
                 // Lógica para el botón de página web
                 // Aún no está programado, puedes agregar el código más tarde
             }
@@ -74,6 +81,7 @@ public class Home_Familiar extends AppCompatActivity implements NavigationView.O
             public void onClick(View v) {
                 Intent intent = new Intent(Home_Familiar.this, Contacto.class);
                 startActivity(intent);
+                //Codigo para agregar nuevos contactos
             }
         });
     }
