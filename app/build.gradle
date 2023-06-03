@@ -61,4 +61,5 @@ dependencies {
 
     // Google Play Services (opcional, si utilizas características de Google Play Services)
     implementation 'com.google.android.gms:play-services-auth:20.5.0'
+    implementation 'com.github.jose-jhr:blueJhrLibrary:0.1.0'
 }

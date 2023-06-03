@@ -1,155 +1,150 @@
+
 package com.residencia.guardiantrackitt;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
-import android.Manifest;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ingenieriajhr.blujhr.BluJhr;
+
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.List;
 
 public class Pulsaciones extends AppCompatActivity {
 
-    private static final int REQUEST_ENABLE_BT = 1;
-    private static final int REQUEST_SELECT_DEVICE = 2;
-    private static final int REQUEST_PERMISSION_LOCATION = 3;
-
-    private ListView listView;
-    private TextView textView;
-    private Button button;
-
-    private BluetoothAdapter bluetoothAdapter;
-    private ArrayAdapter<String> devicesAdapter;
-    private ArrayList<BluetoothDevice> devicesList;
+    BluJhr blue;
+    List<String> requiredPermissions;
+    ArrayList<String> devicesBluetooth = new ArrayList<String>();
+    LinearLayout viewConn;
+    ListView listDeviceBluetooth;
+    Button buttonSend;
+    TextView consola;
+    EditText edtTx;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pulsaciones);
 
-        listView = findViewById(R.id.listView);
-        textView = findViewById(R.id.textView);
-        button = findViewById(R.id.button2);
+        blue = new BluJhr(this);
+        blue.onBluetooth();
+        listDeviceBluetooth = findViewById(R.id.listDeviceBluetooth);
+        viewConn = findViewById(R.id.viewConn);
+        buttonSend = findViewById(R.id.buttonSend);
+        consola = findViewById(R.id.consola);
+        edtTx = findViewById(R.id.edtTx);
 
-        devicesList = new ArrayList<>();
-        devicesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
-        listView.setAdapter(devicesAdapter);
-
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        listDeviceBluetooth.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                BluetoothDevice selectedDevice = devicesList.get(position);
-                // Realizar acciones con el dispositivo seleccionado
-                // (por ejemplo, establecer una conexión y recibir los datos)
-                if (ActivityCompat.checkSelfPermission(Pulsaciones.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    // Permiso concedido, mostrar mensaje de conexión exitosa
-                    Toast.makeText(Pulsaciones.this, "Conexión exitosa con el dispositivo: " + selectedDevice.getName(), Toast.LENGTH_SHORT).show();
-
-                    // Aquí puedes llamar a la función o realizar las acciones necesarias
-                    // según tus requisitos.
-                } else {
-                    // Permiso denegado, solicitar permiso
-                    ActivityCompat.requestPermissions(Pulsaciones.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION_LOCATION);
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                if (!devicesBluetooth.isEmpty()){
+                    blue.connect(devicesBluetooth.get(i));
+                    blue.setDataLoadFinishedListener(new BluJhr.ConnectedBluetooth() {
+                        @Override
+                        public void onConnectState(@NonNull BluJhr.Connected connected) {
+                            if (connected == BluJhr.Connected.True){
+                                Toast.makeText(getApplicationContext(),"True",Toast.LENGTH_SHORT).show();
+                                listDeviceBluetooth.setVisibility(View.GONE);
+                                viewConn.setVisibility(View.VISIBLE);
+                                rxReceived();
+                            }else{
+                                if (connected == BluJhr.Connected.Pending){
+                                    Toast.makeText(getApplicationContext(),"Pending",Toast.LENGTH_SHORT).show();
+                                }else{
+                                    if (connected == BluJhr.Connected.False){
+                                        Toast.makeText(getApplicationContext(),"False",Toast.LENGTH_SHORT).show();
+                                    }else{
+                                        if (connected == BluJhr.Connected.Disconnect){
+                                            Toast.makeText(getApplicationContext(),"Disconnect",Toast.LENGTH_SHORT).show();
+                                            listDeviceBluetooth.setVisibility(View.VISIBLE);
+                                            viewConn.setVisibility(View.GONE);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
                 }
             }
         });
 
-        button.setOnClickListener(new View.OnClickListener() {
+        buttonSend.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                selectBluetoothDevice();
+            public void onClick(View view) {
+                blue.bluTx(edtTx.getText().toString());
             }
         });
 
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (bluetoothAdapter == null) {
-            // El dispositivo no es compatible con Bluetooth
-            textView.setText("El dispositivo no es compatible con Bluetooth");
-            button.setEnabled(false);
-        } else if (!bluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        } else {
-            checkLocationPermission();
-        }
-    }
-
-    private void checkLocationPermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION_LOCATION);
-        } else {
-            loadPairedDevices();
-        }
-    }
-
-    private void loadPairedDevices() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION_LOCATION);
-            return;
-        }
-
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-        if (!pairedDevices.isEmpty()) {
-            devicesAdapter.clear();
-            devicesList.clear();
-            for (BluetoothDevice device : pairedDevices) {
-                devicesAdapter.add(device.getName());
-                devicesList.add(device);
+        buttonSend.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                blue.closeConnection();
+                return false;
             }
-            textView.setText("Dispositivos emparejados");
-        }
+        });
+
+    }
+
+    private void rxReceived() {
+
+        blue.loadDateRx(new BluJhr.ReceivedData() {
+            @Override
+            public void rxDate(@NonNull String s) {
+                consola.setText(consola.getText().toString()+s);
+            }
+        });
+
     }
 
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (blue.checkPermissions(requestCode,grantResults)){
+            Toast.makeText(this, "Exit", Toast.LENGTH_SHORT).show();
+            blue.initializeBluetooth();
+        }else{
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.S){
+                blue.initializeBluetooth();
+            }else{
+                Toast.makeText(this, "Algo salio mal", Toast.LENGTH_SHORT).show();
+            }
+        }
+
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_PERMISSION_LOCATION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permiso de ubicación concedido, cargar dispositivos emparejados
-                loadPairedDevices();
-            } else {
-                // Permiso de ubicación denegado, mostrar mensaje de error o tomar medidas apropiadas
-                // ...
-            }
-        }
     }
 
-    private void selectBluetoothDevice() {
-        Intent intent = new Intent(Pulsaciones.this, DeviceListActivity.class);
-        startActivityForResult(intent, REQUEST_SELECT_DEVICE);
-    }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_ENABLE_BT) {
-            if (resultCode == RESULT_OK) {
-                checkLocationPermission();
-            } else {
-                textView.setText("El Bluetooth no está habilitado");
-                button.setEnabled(false);
-            }
-        } else if (requestCode == REQUEST_SELECT_DEVICE) {
-            if (resultCode == RESULT_OK) {
-                // Obtener el dispositivo seleccionado del resultado
-                BluetoothDevice selectedDevice = data.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                // Realizar acciones con el dispositivo seleccionado
-                // (por ejemplo, establecer una conexión y recibir los datos)
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+
+        if (!blue.stateBluetoooth() && requestCode == 100){
+            blue.initializeBluetooth();
+        }else{
+            if (requestCode == 100){
+                devicesBluetooth = blue.deviceBluetooth();
+                if (!devicesBluetooth.isEmpty()){
+                    ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_expandable_list_item_1,devicesBluetooth);
+                    listDeviceBluetooth.setAdapter(adapter);
+                }else{
+                    Toast.makeText(this, "No tienes vinculados dispositivos", Toast.LENGTH_SHORT).show();
+                }
+
             }
         }
+
+        super.onActivityResult(requestCode, resultCode, data);
     }
 }
