@@ -46,6 +46,7 @@ public class Home_Familiar extends AppCompatActivity implements NavigationView.O
         Button buttonPaciente = findViewById(R.id.buttonPaciente);
         Button buttonPaginaWeb = findViewById(R.id.buttonPaginaWeb);
         Button buttonContacto = findViewById(R.id.buttonContacto);
+        Button buttonPulsaciones = findViewById(R.id.buttonPulsaciones);
 
         buttonUbicacion.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,6 +83,14 @@ public class Home_Familiar extends AppCompatActivity implements NavigationView.O
                 Intent intent = new Intent(Home_Familiar.this, Contacto.class);
                 startActivity(intent);
                 //Codigo para agregar nuevos contactos
+            }
+        });
+
+        buttonPulsaciones.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Home_Familiar.this, Pulsaciones.class);
+                startActivity(intent);
             }
         });
     }

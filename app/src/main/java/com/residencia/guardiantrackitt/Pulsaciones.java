@@ -1,150 +1,154 @@
 package com.residencia.guardiantrackitt;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.widget.TextView;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.UUID;
+import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Set;
 
 public class Pulsaciones extends AppCompatActivity {
 
-    private TextView textData;
+    private static final int REQUEST_ENABLE_BT = 1;
+    private static final int REQUEST_SELECT_DEVICE = 2;
+    private static final int REQUEST_PERMISSION_LOCATION = 3;
+
+    private ListView listView;
+    private TextView textView;
+    private Button button;
+
     private BluetoothAdapter bluetoothAdapter;
-    private BluetoothSocket bluetoothSocket;
-    private BluetoothDevice bluetoothDevice;
-    private InputStream inputStream;
-    private OutputStream outputStream;
-    private boolean isConnected = false;
-    private StringBuilder dataBuffer = new StringBuilder();
-    private static final int MESSAGE_READ = 1;
-    private static final int CONNECTING_STATUS = 2;
-    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private ArrayAdapter<String> devicesAdapter;
+    private ArrayList<BluetoothDevice> devicesList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pulsaciones);
-        textData = findViewById(R.id.textData);
+
+        listView = findViewById(R.id.listView);
+        textView = findViewById(R.id.textView);
+        button = findViewById(R.id.button2);
+
+        devicesList = new ArrayList<>();
+        devicesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
+        listView.setAdapter(devicesAdapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                BluetoothDevice selectedDevice = devicesList.get(position);
+                // Realizar acciones con el dispositivo seleccionado
+                // (por ejemplo, establecer una conexión y recibir los datos)
+                if (ActivityCompat.checkSelfPermission(Pulsaciones.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    // Permiso concedido, mostrar mensaje de conexión exitosa
+                    Toast.makeText(Pulsaciones.this, "Conexión exitosa con el dispositivo: " + selectedDevice.getName(), Toast.LENGTH_SHORT).show();
+
+                    // Aquí puedes llamar a la función o realizar las acciones necesarias
+                    // según tus requisitos.
+                } else {
+                    // Permiso denegado, solicitar permiso
+                    ActivityCompat.requestPermissions(Pulsaciones.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION_LOCATION);
+                }
+            }
+        });
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                selectBluetoothDevice();
+            }
+        });
+
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null) {
             // El dispositivo no es compatible con Bluetooth
-            return;
-        }
-
-        if (!bluetoothAdapter.isEnabled()) {
-            // El Bluetooth no está habilitado, puedes solicitar al usuario que lo habilite
-            return;
-        }
-
-        // Obtén el dispositivo Bluetooth al que deseas conectarte (puedes buscarlo o usar una dirección específica)
-        bluetoothDevice = bluetoothAdapter.getRemoteDevice("98d3:51:fdefba");
-
-        // Inicia una nueva conexión Bluetooth en un hilo separado
-        new ConnectThread().start();
-    }
-
-    private class ConnectThread extends Thread {
-        public void run() {
-            try {
-                if (ActivityCompat.checkSelfPermission(Pulsaciones.class.newInstance(), android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
-                bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(MY_UUID);
-                bluetoothAdapter.cancelDiscovery();
-                bluetoothSocket.connect();
-                isConnected = true;
-
-                inputStream = bluetoothSocket.getInputStream();
-                outputStream = bluetoothSocket.getOutputStream();
-
-                // Crea un bucle para leer los datos recibidos del Arduino
-                while (isConnected) {
-                    byte[] buffer = new byte[1024];
-                    int bytes = inputStream.read(buffer);
-                    String data = new String(buffer, 0, bytes);
-                    dataBuffer.append(data);
-
-                    // Procesa los datos recibidos y actualiza la interfaz de usuario si es necesario
-                    if (dataBuffer.toString().contains("\n")) {
-                        String message = dataBuffer.toString().trim();
-                        // Aquí puedes realizar las operaciones necesarias con los datos recibidos
-                        // Por ejemplo, mostrarlos en un TextView o realizar algún cálculo
-                        // Puedes usar un Handler para enviar un mensaje a la interfaz de usuario
-                        Message messages = handler.obtainMessage(MESSAGE_READ, dataBuffer.length(), -1, dataBuffer.toString());
-                        messages.sendToTarget();
-                        dataBuffer.setLength(0);
-                    }
-                }
-            } catch (IOException e) {
-                // Manejar cualquier excepción que ocurra durante la conexión
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e);
-            }
+            textView.setText("El dispositivo no es compatible con Bluetooth");
+            button.setEnabled(false);
+        } else if (!bluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        } else {
+            checkLocationPermission();
         }
     }
 
-    private final Handler handler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-            if (msg.what == MESSAGE_READ) {
-                // Aquí puedes actualizar la interfaz de usuario con los datos recibidos
-                String receivedData = (String) msg.obj;
-                // Actualiza tu interfaz de usuario con los datos recibidos
-                // Por ejemplo, muestra los datos en un TextView
-                // textView.setText(receivedData);
-                textData.setText(receivedData);
-                return true;
-            } else if (msg.what == CONNECTING_STATUS) {
-                // Aquí puedes manejar el estado de conexión (conectado o desconectado)
-                if (msg.arg1 == 1) {
-                    // Conexión establecida
-                } else {
-                    // Error de conexión
-                }
-            }
-            return false;
+    private void checkLocationPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION_LOCATION);
+        } else {
+            loadPairedDevices();
         }
-    });
+    }
+
+    private void loadPairedDevices() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION_LOCATION);
+            return;
+        }
+
+        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        if (!pairedDevices.isEmpty()) {
+            devicesAdapter.clear();
+            devicesList.clear();
+            for (BluetoothDevice device : pairedDevices) {
+                devicesAdapter.add(device.getName());
+                devicesList.add(device);
+            }
+            textView.setText("Dispositivos emparejados");
+        }
+    }
+
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (isConnected) {
-            // Cierra la conexión Bluetooth y libera los recursos
-            try {
-                isConnected = false;
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-                if (outputStream != null) {
-                    outputStream.close();
-                }
-                if (bluetoothSocket != null) {
-                    bluetoothSocket.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_PERMISSION_LOCATION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permiso de ubicación concedido, cargar dispositivos emparejados
+                loadPairedDevices();
+            } else {
+                // Permiso de ubicación denegado, mostrar mensaje de error o tomar medidas apropiadas
+                // ...
+            }
+        }
+    }
+
+    private void selectBluetoothDevice() {
+        Intent intent = new Intent(Pulsaciones.this, DeviceListActivity.class);
+        startActivityForResult(intent, REQUEST_SELECT_DEVICE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_ENABLE_BT) {
+            if (resultCode == RESULT_OK) {
+                checkLocationPermission();
+            } else {
+                textView.setText("El Bluetooth no está habilitado");
+                button.setEnabled(false);
+            }
+        } else if (requestCode == REQUEST_SELECT_DEVICE) {
+            if (resultCode == RESULT_OK) {
+                // Obtener el dispositivo seleccionado del resultado
+                BluetoothDevice selectedDevice = data.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                // Realizar acciones con el dispositivo seleccionado
+                // (por ejemplo, establecer una conexión y recibir los datos)
             }
         }
     }

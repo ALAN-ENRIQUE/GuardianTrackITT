@@ -32,6 +32,7 @@
     <string name="button_paciente">Paciente</string>
     <string name="button_pagina_web">Página Web</string>
     <string name="button_contacto">Contacto</string>
+    <string name="button_pulsaciones">Pulsaciones</string>
 
     <string name="navigation_drawer_open">Abrir navegación</string>
     <string name="navigation_drawer_close">Cerrar navegación</string>
